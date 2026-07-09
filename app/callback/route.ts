@@ -16,10 +16,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/?error=oauth_expired", request.url));
   }
 
-  const client = getWixClient();
-  const { code, state } = client.auth.parseFromUrl(request.url);
-  const tokens = await client.auth.getMemberTokens(code, state, oauthData);
-  await storeTokens(tokens);
-
-  return NextResponse.redirect(new URL(oauthData.originalUri || "/", request.url));
+  try {
+    const client = getWixClient();
+    const { code, state } = client.auth.parseFromUrl(request.url);
+    const tokens = await client.auth.getMemberTokens(code, state, oauthData);
+    await storeTokens(tokens);
+    return NextResponse.redirect(new URL(oauthData.originalUri || "/", request.url));
+  } catch (err) {
+    console.error("[callback] token exchange failed:", err);
+    return NextResponse.redirect(new URL("/?error=auth_failed", request.url));
+  }
 }
